@@ -16,6 +16,7 @@ Feature:
 - UTC Hour
 - Save the idcall record with the Guardar button or Enter
 - Focus in ID Call
+- Link to QRZ.com contacts
 
   
 ---
