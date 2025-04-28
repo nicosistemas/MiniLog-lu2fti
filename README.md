@@ -14,6 +14,10 @@ Feature:
 - Posibility to change ID
 - Database on simple csv file
 - UTC Hour
+- Save the idcall record with the Guardar button or Enter
+- Focus in ID Call
+
+  
 ---
 
 
