@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MiniLog</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center; /* Centra todo el contenido */
+            padding: 20px;
+            background-color: #000000; /* Fondo negro */
+            color: #FFFFFF; /* Texto blanco para mejor visibilidad */
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        form {
+            display: inline-block;
+            text-align: left;
+        }
+
+        input, select {
+            margin: 10px 0;
+            padding: 8px;
+            font-size: 1.2em;
+            width: 100%;
+            background-color: #333333; /* Fondo oscuro para los campos */
+            color: #FFFFFF; /* Texto blanco */
+            border: 1px solid #555555; /* Borde gris */
+        }
+
+        .row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .row input, .row select {
+            width: 150px; /* Aseguramos que todos los inputs tengan el mismo tamaño */
+            text-align: center;
+        }
+
+        .row2 input {
+            width: 250px; /* Hacemos los campos de la segunda fila más estrechos */
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        table {
+            margin-top: 20px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid #555555; /* Borde gris claro */
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: center;
+            background-color: #222222; /* Fondo oscuro para las celdas */
+        }
+
+        .export-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .export-button button {
+            background-color: #007BFF; /* Azul */
+            padding: 8px 16px; /* Botón más pequeño */
+            font-size: 1em;
+        }
+
+        .operator-id {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+
+        /* Centrar el botón de guardar */
+        .save-button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        /* Estilo para los enlaces */
+        a {
+            color: #FFFFFF; /* Color blanco */
+            text-decoration: none; /* Elimina subrayado */
+        }
+
+        a:hover {
+            text-decoration: underline; /* Subrayado al pasar el ratón */
+        }
+
+        /* Estilo para la hora UTC */
+        .utc-time {
+            color: #FFFFFF;
+            font-size: 1.2em;
+            margin-right: 15px; /* Espacio entre la hora y el botón */
+        }
+
+        /* Estilo para el campo Mi ID más angosto */
+        #operator_id_input {
+            width: 90px; /* Reducimos el ancho a la mitad */
+            text-align: center;
+        }
+        .contacts-header {
+           margin-top: 60px; /* Puedes ajustar el valor según el espacio que quieras */ 
+        }
+    </style>
+</head>
+<body>
+    <h1>MiniLog</h1>
+    <p style="font-size: 0.9em;">
+        by <a href="https://github.com/nicosistemas" target="_blank" style="color: #FFFFFF;">LU2FTI</a>
+    </p>
+    <div class="container">
+        <!-- ID del operador -->
+        <div class="operator-id">
+            <form method="POST" action="/" id="operatorForm">
+                <label for="operator_id">ID:</label>
+                <input type="text" name="operator_id" id="operator_id_input" placeholder="CALLSIGN" value="{{ operator_id }}" required>
+            </form>
+        </div>        
+        <!-- Hora UTC primero y luego el botón Exportar -->
+        <div class="export-button">
+            <span class="utc-time" id="utc-time">Hora UTC: --:--:--</span>
+            <a href="/export">
+                <button>Exporar ADIF</button>
+            </a>
+        </div>
+    </div>
+
+    <form method="post" id="logForm">
+        <!-- Fila 1 con el campo ID centrado -->
+        <div class="row">
+            <input type="text" name="id" placeholder="ID Call" required
+                   pattern="^[A-Z]{1,3}[0-9]{1}[A-Z]{1,4}$"
+                   title="Formato esperado: 1-3 letras + 1 número + 1-4 letras. Ej: LU2FTI"
+                   oninput="this.value = this.value.toUpperCase();" id="contact_id_input">
+        </div>
+
+        <!-- Fila 2 con el modo, frecuencia y notas -->
+        <div class="row row2">
+            <select name="mode" required>
+                <option value="SSB" {% if last_mode == 'SSB' %}selected{% endif %}>SSB</option>
+                <option value="CW" {% if last_mode == 'CW' %}selected{% endif %}>CW</option>
+                <option value="FT8" {% if last_mode == 'FT8' %}selected{% endif %}>FT8</option>
+                <option value="FM" {% if last_mode == 'FM' %}selected{% endif %}>FM</option>
+            </select>
+            <input type="text" name="frequency" placeholder="Frecuencia MHz (7.074)" value="{{ last_frequency }}" required>
+            <input type="text" name="extra" placeholder="Notas">
+        </div>
+
+        <!-- Contenedor del botón Guardar centrado -->
+        <div class="save-button-container">
+            <button type="submit">Guardar</button>
+        </div>
+    </form>
+
+    <h2 class="contacts-header">Contactos Realizados</h2>
+    <table>
+        <tr>
+            <th>Fecha</th>
+            <th>ID</th>
+            <th>Modo</th>
+            <th>Frecuencia</th>
+            <th>Notas</th>
+        </tr>
+        <!-- Invertimos el orden de los registros (mostramos los más recientes arriba) -->
+        {% for c in contacts[::-1] %}
+        <tr>
+            <td>{{ c[0] }}</td>
+            <td><a href="https://www.qrz.com/db/{{ c[1] }}" target="_blank">{{ c[1] }}</a></td> <!-- Aquí se agrega el enlace a QRZ -->
+            <td>{{ c[2] }}</td>
+            <td>{{ c[3] }}</td>
+            <td>{{ c[4] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <script>
+        // Asegurarse de que el foco esté siempre en el campo de ID del corresponsal
+        document.getElementById("contact_id_input").focus();
+
+        // Función para mostrar la hora UTC y actualizarla cada segundo
+        function showUTC() {
+            const utcDate = new Date().toISOString();
+            const utcTime = utcDate.substring(11, 19); // Extraemos la hora en formato HH:MM:SS
+            document.getElementById("utc-time").innerText = "Hora UTC: " + utcTime;
+        }
+
+        // Mostrar la hora UTC cada segundo
+        setInterval(showUTC, 1000);
+
+        // Llamar a la función una vez para mostrar la hora inmediatamente al cargar la página
+        showUTC();
+    </script>
+</body>
+</html>
