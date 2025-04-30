@@ -6,6 +6,12 @@ Simple logger developed by LU2FTI.
 
 `python3 app.py`
 
+Run Docker:
+
+`docker build -t minilog . `
+
+`docker run -d -p 5000:5000 --name minilog minilog`
+
 
 Feature:
 
