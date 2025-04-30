@@ -1,18 +1,25 @@
 # MiniLog
 
 Simple logger developed by LU2FTI.
+<br>
+<br>
+Run to localhost:5000 or 127.0.0.1:5000 or [IP]:5000
+<br>
+<br>
 - Run
   
 `pip install Flask`
 
 `python3 app.py`
-
+<br>
+<br>
 - Run Docker:
 
 `docker build -t minilog . `
 
 `docker run -d -p 5000:5000 --name minilog minilog`
-
+<br>
+<br>
 - Run Windows:
 
 (tener instalado Python)
