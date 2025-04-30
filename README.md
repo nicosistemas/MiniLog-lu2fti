@@ -1,17 +1,33 @@
 # MiniLog
 
 Simple logger developed by LU2FTI.
-
+- Run
+  
 `pip install Flask`
 
 `python3 app.py`
 
-Run Docker:
+- Run Docker:
 
 `docker build -t minilog . `
 
 `docker run -d -p 5000:5000 --name minilog minilog`
 
+- Run Windows:
+
+(tener instalado Python)
+  
+`python -m venv venv`
+
+`venv\Scripts\activate`
+
+`pip install -r requirements.txt`  or `pip install Flask`
+
+`python app.py`
+
+para desactivar el entorno: deactivate
+
+---
 
 Feature:
 
