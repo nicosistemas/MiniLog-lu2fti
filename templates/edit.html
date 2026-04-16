@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar contacto</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #000000;
+            color: #FFFFFF;
+        }
+
+        form {
+            display: inline-block;
+            text-align: left;
+            margin-top: 30px;
+        }
+
+        input, select {
+            margin: 10px 0;
+            padding: 8px;
+            font-size: 1.2em;
+            width: 250px;
+            background-color: #333333;
+            color: #FFFFFF;
+            border: 1px solid #555555;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .container {
+            margin-top: 40px;
+        }
+
+        a {
+            color: #FFFFFF;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        h2 {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>MiniLog</h1>
+    <h2>Editar contacto</h2>
+
+    <div class="container">
+        <form method="post">
+
+            <input type="text" name="id" value="{{ contact[1] }}" required>
+
+            <select name="mode" required>
+                <option value="SSB" {% if contact[2] == 'SSB' %}selected{% endif %}>SSB</option>
+                <option value="CW" {% if contact[2] == 'CW' %}selected{% endif %}>CW</option>
+                <option value="FT8" {% if contact[2] == 'FT8' %}selected{% endif %}>FT8</option>
+                <option value="FM" {% if contact[2] == 'FM' %}selected{% endif %}>FM</option>
+            </select>
+
+            <input type="text" name="frequency" value="{{ contact[3] }}" required>
+
+            <input type="text" name="extra" value="{{ contact[4] }}">
+
+            <br>
+            <button type="submit">Guardar cambios</button>
+        </form>
+
+        <br>
+        <a href="/">⬅ Volver al log</a>
+    </div>
+
+</body>
+</html>
