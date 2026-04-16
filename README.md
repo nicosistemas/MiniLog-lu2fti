@@ -1,6 +1,8 @@
 # MiniLog
 
 Simple logger developed by LU2FTI.
+
+<img width="1043" height="809" alt="image" src="https://github.com/user-attachments/assets/0dd9bb25-dd9e-4ca0-8199-1cc7d612d5ef" />
 <br>
 <br>
 Run to localhost:5000 or 127.0.0.1:5000 or [IP]:5000
@@ -49,7 +51,4 @@ Feature:
 
   
 ---
-<img width="1043" height="809" alt="image" src="https://github.com/user-attachments/assets/0dd9bb25-dd9e-4ca0-8199-1cc7d612d5ef" />
 
-
-![image](https://github.com/user-attachments/assets/5befdb3c-f4b0-4b11-80cf-ee3a10d16167)
