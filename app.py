@@ -78,6 +78,72 @@ def get_band(frequency):
     return "UNKNOWN"
 
 # ================================
+# DXCC (cty.dat)
+# ================================
+def load_cty():
+    prefixes = {}
+    exact_calls = {}
+    current_country = None
+
+    with open("cty.dat", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            line = line.strip()
+
+            if not line:
+                continue
+
+            if ":" in line:
+                parts = line.split(":")
+                current_country = parts[0].strip()
+                continue
+
+            if not current_country:
+                continue
+
+            line = line.replace(";", "")
+            items = line.split(",")
+
+            for item in items:
+                item = item.strip().upper()
+
+                if not item:
+                    continue
+
+                is_exact = item.startswith("=")
+
+                item = item.replace("=", "")
+                item = item.split("(")[0]
+                item = item.split("[")[0]
+                item = item.strip()
+
+                if not item:
+                    continue
+
+                if is_exact:
+                    exact_calls[item] = current_country
+                else:
+                    prefixes[item] = current_country
+
+    prefixes = dict(sorted(prefixes.items(), key=lambda x: -len(x[0])))
+
+    return prefixes, exact_calls
+
+
+def get_country(call, prefixes, exact_calls):
+    call = call.upper()
+
+    if call in exact_calls:
+        return exact_calls[call]
+
+    for prefix in prefixes:
+        if call.startswith(prefix):
+            return prefixes[prefix]
+
+    return "UNKNOWN"
+
+PREFIXES, EXACT_CALLS = load_cty()
+
+# ================================
 # Routes
 # ================================
 @app.route('/', methods=['GET', 'POST'])
@@ -208,6 +274,21 @@ def export():
         f.write(adi_content)
 
     return send_file(filename, as_attachment=True)
+
+# ================================
+# buscador de Country
+# ================================
+
+@app.route('/lookup')
+def lookup():
+    call = request.args.get('call', '').upper()
+
+    if not call:
+        return {"country": ""}
+
+    country = get_country(call, PREFIXES, EXACT_CALLS)
+
+    return {"country": country}
 
 # ================================
 # Run
