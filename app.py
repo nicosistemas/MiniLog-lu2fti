@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, send_file
 import csv
 import os
 from datetime import datetime, timezone
+from flask import jsonify
 
 app = Flask(__name__)
 
@@ -289,6 +290,47 @@ def lookup():
     country = get_country(call, PREFIXES, EXACT_CALLS)
 
     return {"country": country}
+
+# ================================
+# Endpoint API QSO
+# ================================
+
+@app.route("/api/qso", methods=["POST"])
+def api_qso():
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"error": "no data"}), 400
+
+    call = data.get("call", "").strip().upper()
+    mode = data.get("mode", "")
+    freq = data.get("freq", 0)
+    mycall = data.get("mycall", "")
+    timestamp = data.get("timestamp")
+
+    if not call:
+        return jsonify({"error": "missing call"}), 400
+
+    if not timestamp:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    contacts = load_contacts()
+    contacts.append([
+        timestamp,
+        call,
+        mode,
+        str(freq),
+        data.get("extra", ""),
+        mycall
+    ])
+
+    save_contacts(contacts)
+
+    return jsonify({
+        "status": "ok",
+        "call": call,
+        "mode": mode
+    })
 
 # ================================
 # Run
