@@ -1,48 +1,54 @@
-# Importamos las librerías necesarias
 from flask import Flask, render_template, request, redirect, send_file
 import csv
 import os
 from datetime import datetime, timezone
 
-# Inicializamos la aplicación Flask
 app = Flask(__name__)
 
-# Variables globales para mantener el último modo y frecuencia registrados
+# ================================
+# Archivos (dentro del contenedor)
+# ================================
+CONTACTS_FILE = "contacts.csv"
+OPERATOR_FILE = "operator_id.txt"
+
 last_mode = ''
 last_frequency = ''
 
 # ================================
-# Funciones de gestión del operador
+# Operador
 # ================================
-
 def save_operator_id(op_id):
-    """Guarda el ID del operador en un archivo de texto."""
-    with open('operator_id.txt', 'w') as f:
+    with open(OPERATOR_FILE, 'w') as f:
         f.write(op_id)
 
 def load_operator_id():
-    """Carga el ID del operador desde el archivo de texto, o retorna uno por defecto."""
-    if os.path.exists('operator_id.txt'):
-        with open('operator_id.txt', 'r') as f:
+    if os.path.exists(OPERATOR_FILE):
+        with open(OPERATOR_FILE, 'r') as f:
             return f.read().strip()
-    else:
-        return 'LU2FTI'  # Valor por defecto si no existe el archivo
+    return 'LU2FTI'
 
-# Cargar el operator_id al iniciar la app
 operator_id = load_operator_id()
 
 # ================================
-# Funciones auxiliares
+# Helpers
 # ================================
+def load_contacts():
+    if not os.path.exists(CONTACTS_FILE):
+        return []
+    with open(CONTACTS_FILE, newline='') as f:
+        return list(csv.reader(f))
+
+def save_contacts(contacts):
+    with open(CONTACTS_FILE, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(contacts)
 
 def get_band(frequency):
-    """Determina la banda de frecuencia basada en la frecuencia ingresada."""
     try:
         frequency = float(frequency)
     except ValueError:
         return "UNKNOWN"
 
-    # Rango de frecuencias para cada banda
     if 1.8 <= frequency < 2.0:
         return "160m"
     elif 3.5 <= frequency < 4.0:
@@ -69,76 +75,112 @@ def get_band(frequency):
         return "2m"
     elif 430.0 <= frequency < 450.0:
         return "70cm"
-    else:
-        return "UNKNOWN"
+    return "UNKNOWN"
 
 # ================================
-# Rutas de la aplicación
+# Routes
 # ================================
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    """Ruta principal: permite registrar contactos y visualizar el historial."""
     global last_mode, last_frequency, operator_id
 
     if request.method == 'POST':
-        # Actualizamos el ID del operador si fue cambiado
         if 'operator_id' in request.form and request.form['operator_id']:
             operator_id = request.form['operator_id']
             save_operator_id(operator_id)
 
-        # Capturamos los datos del formulario
-        contact_id = request.form['id']
+        contact_id = request.form['id'].upper()
         mode = request.form['mode']
-        frequency = request.form['frequency']
+        try:
+            frequency = float(request.form['frequency'].replace(',', '.'))
+            frequency = f"{frequency:.3f}"
+        except ValueError:
+            return redirect('/')
+        ##frequency = request.form['frequency']
         extra = request.form['extra']
         date = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
-        # Actualizamos las últimas variables
         last_mode = mode
         last_frequency = frequency
 
-        # Guardamos el contacto en el CSV
-        with open('contacts.csv', 'a', newline='') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow([date, contact_id, mode, frequency, extra, operator_id])
-        
+        contacts = load_contacts()
+        contacts.append([date, contact_id, mode, frequency, extra, operator_id])
+        save_contacts(contacts)
+
         return redirect('/')
 
-    # Leemos los contactos existentes
-    contacts = []
-    if os.path.exists('contacts.csv'):
-        with open('contacts.csv', newline='') as csvfile:
-            reader = csv.reader(csvfile)
-            contacts = list(reader)
+    contacts = load_contacts()
+    contacts_with_index = list(enumerate(contacts))[::-1]
 
-    # Renderizamos el HTML
-    return render_template('index.html', contacts=contacts, last_mode=last_mode, last_frequency=last_frequency, operator_id=operator_id)
+    return render_template(
+        'index.html',
+        contacts=contacts_with_index,
+        last_mode=last_mode,
+        last_frequency=last_frequency,
+        operator_id=operator_id
+    )
 
+# ================================
+# Editar
+# ================================
+@app.route('/edit/<int:index>', methods=['GET', 'POST'])
+def edit(index):
+    contacts = load_contacts()
+
+    if index >= len(contacts):
+        return "Contacto no encontrado", 404
+
+    if request.method == 'POST':
+        contacts[index][1] = request.form['id'].upper()
+        ##contacts[index][1] = request.form['id']
+        contacts[index][2] = request.form['mode']
+        ##contacts[index][3] = request.form['frequency']
+        try:
+          freq = float(request.form['frequency'].replace(',', '.'))
+          contacts[index][3] = f"{freq:.3f}"
+        except ValueError:
+          return redirect('/')
+        contacts[index][4] = request.form['extra']
+
+        save_contacts(contacts)
+        return redirect('/')
+
+    return render_template('edit.html', contact=contacts[index], index=index)
+
+# ================================
+# Eliminar
+# ================================
+@app.route('/delete/<int:index>')
+def delete(index):
+    contacts = load_contacts()
+
+    if index >= len(contacts):
+        return "Contacto no encontrado", 404
+
+    contacts.pop(index)
+    save_contacts(contacts)
+
+    return redirect('/')
+
+# ================================
+# Exportar ADIF
+# ================================
 @app.route('/export')
 def export():
-    """Ruta para exportar los contactos en formato ADIF."""
-    global operator_id
+    contacts = load_contacts()
 
-    # Leemos los contactos existentes
-    contacts = []
-    if os.path.exists('contacts.csv'):
-        with open('contacts.csv', newline='') as csvfile:
-            reader = csv.reader(csvfile)
-            contacts = list(reader)
-
-    # Si no hay operator_id definido
     if not operator_id:
-        operator_id = 'UNKNOWN'
+        op_id = 'UNKNOWN'
+    else:
+        op_id = operator_id
 
     current_time = datetime.now().strftime("%Y%m%d-%H%M%S")
     filename = f"contacts-{current_time}.adi"
 
-    # Generamos el contenido del archivo ADIF
     adi_content = "Generated by MiniLog by LU2FTI\n"
+
     for c in contacts:
         if len(c) < 6:
-            print(f"Skipping incomplete contact entry: {c}")
             continue
 
         band = get_band(c[3])
@@ -150,25 +192,25 @@ def export():
         except ValueError:
             time_on = '000000'
 
-        adi_content += f"<station_callsign:{len(operator_id)}>{operator_id} <call:{len(c[1])}>{c[1]} <qso_date:{len(qso_date)}>{qso_date} <time_on:{len(time_on)}>{time_on} <band:{len(band)}>{band} <freq:{len(c[3])}>{c[3]} <mode:{len(c[2])}>{c[2]} <extra:{len(extra)}>{extra} <eor>\n "
+        adi_content += f"<station_callsign:{len(op_id)}>{op_id} "
+        adi_content += f"<call:{len(c[1])}>{c[1]} "
+        adi_content += f"<qso_date:{len(qso_date)}>{qso_date} "
+        adi_content += f"<time_on:{len(time_on)}>{time_on} "
+        adi_content += f"<band:{len(band)}>{band} "
+        adi_content += f"<freq:{len(c[3])}>{c[3]} "
+        adi_content += f"<mode:{len(c[2])}>{c[2]} "
+        adi_content += f"<extra:{len(extra)}>{extra} <eor>\n"
 
-    # Si no hay contactos, informamos
     if adi_content.strip() == "Generated by MiniLog by LU2FTI":
         return "No hay contactos para exportar"
 
-    # Escribimos el archivo
-    try:
-        with open(filename, 'w') as f:
-            f.write(adi_content)
-    except Exception as e:
-        return f"Error al escribir el archivo ADIF: {e}"
+    with open(filename, 'w') as f:
+        f.write(adi_content)
 
-    # Enviamos el archivo al usuario
     return send_file(filename, as_attachment=True)
 
 # ================================
-# Arranque de la aplicación
+# Run
 # ================================
-
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
