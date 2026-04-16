@@ -156,10 +156,27 @@
         </div>
     </div>
 
-    <!-- Formulario -->
     <form method="post">
-        <div class="row">
-            <input type="text" name="id" placeholder="ID Call" required id="contact_id_input">
+        <div class="row" style="width: 100%; position: relative;">
+            <input type="text"
+                   name="id"
+                   placeholder="ID Call"
+                   required
+                   id="contact_id_input"
+                   style="margin: 0 auto; display: block; width: 150px; text-align: center;">
+            <div id="country-result" style="
+                position: absolute;
+                right: 0;
+                top: 50%;
+                transform: translateY(-50%);
+                min-width: 180px;
+                text-align: left;
+                font-size: 1.1em;
+                font-weight: bold;
+                color: #00FFAA;
+            ">
+            </div>
+        
         </div>
 
         <div class="row row2">
@@ -213,16 +230,46 @@
 
     <script>
         document.getElementById("contact_id_input").focus();
-
+    
         function showUTC() {
             const utcDate = new Date().toISOString();
             const utcTime = utcDate.substring(11, 19);
             document.getElementById("utc-time").innerText = "Hora UTC: " + utcTime;
         }
-
+    
         setInterval(showUTC, 1000);
         showUTC();
+    
+        // ========================
+        // DXCC Lookup
+        // ========================
+        const input = document.getElementById("contact_id_input");
+        const result = document.getElementById("country-result");
+    
+        input.addEventListener("input", async () => {
+            const call = input.value.toUpperCase();
+    
+            if (call.length < 2) {
+                result.innerText = "";
+                return;
+            }
+    
+            try {
+                const res = await fetch(`/lookup?call=${call}`);
+                const data = await res.json();
+    
+                if (data.country && data.country !== "UNKNOWN") {
+                    result.innerText = "País: " + data.country;
+                } else {
+                    result.innerText = "País: ?";
+                }
+            } catch (e) {
+                result.innerText = "";
+            }
+        });
     </script>
+</body>
+</html>
 
 </body>
 </html>
